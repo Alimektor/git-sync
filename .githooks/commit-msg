@@ -1,0 +1,25 @@
+#!/usr/bin/env -S bash -e
+# commit-msg hook for the current Git repository.
+
+# shellcheck source=lib/functions
+. ./.githooks/lib/functions
+
+time_now="$(date '+%Y-%m-%d %T')"
+system_name=$(get_os)
+if [[ "${system_name}" = "Termux" ]]
+then 
+    print_info "Use a default update message"
+    git commit -m "UPDATE from ${system_name} by ${time_now}"
+else
+    commit_msg_filepath="${1}"
+    commit_message="$(cat "${commit_msg_filepath}")"
+    
+    if [[ "${commit_message}" = "[UPDATED]" ]]
+    then
+        print_info "Use a default update message"
+        echo "UPDATE from ${system_name} by ${time_now}" > "${commit_msg_filepath}"
+    else
+        print_info "Commit with message: ${warning_color}${commit_message}"
+        echo "UPDATE from ${system_name} by ${time_now} with message: ${commit_message}" > "${commit_msg_filepath}"
+    fi
+fi

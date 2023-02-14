@@ -1,0 +1,200 @@
+#!/usr/bin/env -S bash -e
+# functions for Git hooks.
+
+# colors
+export reset_color='\e[0m'
+export info_color='\e[1;34m'
+export warning_color='\e[1;33m'
+export error_color='\e[1;31m'
+export success_color='\e[1;32m'
+
+# Public: Full path of the current Git repository. Example: /home/alimektor/git-sync.
+git_sync_repo="$(git rev-parse --show-toplevel)"
+export git_sync_repo
+
+# Public: Base name of the current Git repostory. Example: git-sync.
+git_sync_repo_basename="$(basename "${git_sync_repo}")"
+export git_sync_repo_basename
+
+if ! git config user.name > /dev/null 2>&1
+then
+    echo "You must have user.name for the current Git repository!"
+    exit 1
+fi
+
+# Public: Current Git user name. Example: Alimektor.
+username="$(git config user.name)"
+export username
+
+# Public: Get the current system name.
+#
+# **Examples**
+#
+#   get_os
+#
+# **Returns**
+#
+# `Kali` - If the system is Kali Linux.
+# `Alt Linux` - If the system is ALT Linux.
+# `openSUSE` - If the system is openSUSE Linux.
+# `Mint` - If the system is Mint Linux.
+# `Raspbian` - If the system is Raspbian Linux.
+# `Termux` - If the system is Termux Emulator.
+# `Ubuntu` - If the system is Ubuntu Linux.
+# `Elementary` - If the system is elementaryOS.
+# `Windows CYGWIN` - If the system is Windows with CYGWIN.
+# `Windows MINGW` - If the system is Windows with MINGW.
+get_os() {
+    local kernel_name=""
+    local machine=""
+    local osname=""
+
+    kernel_name="$(uname -s)"
+
+    case "${kernel_name}" in
+        Linux*)
+            machine="Linux"
+            ;;
+        Darwin*)
+            machine="Mac"
+            echo "${machine}"
+            return 0
+            ;;
+        CYGWIN*)
+            machine="Windows CYGWIN"
+            echo "${machine}"
+            return 0
+            ;;
+        MINGW*)
+            machine="Windows MINGW"
+            echo "${machine}"
+            return 0
+            ;;
+        *)
+            machine="Unknown Machine (${kernel_name})"
+            echo "${machine}"
+            return 0
+            ;;
+    esac
+
+    if [[ ! ${machine} = "Linux" ]]
+    then
+        echo "${machine}"
+        exit 0
+    fi
+
+    # Linux
+    if [[ -f /etc/os-release ]]
+    then
+        # shellcheck source=/dev/null
+        . /etc/os-release
+        osname=${NAME}
+    elif type lsb_release >/dev/null 2>&1
+    then
+        osname=$(lsb_release -si)
+    elif [[ -f /etc/lsb-release ]]
+    then
+        # shellcheck source=/dev/null
+        . /etc/lsb-release
+        osname=${DISTRIB_ID}
+    elif [[ -f /etc/debian_version ]]
+    then
+        # shellcheck source=/dev/null
+        . /etc/debian_version
+        osname=Debian
+    elif [[ -f /etc/SuSe-release ]]
+    then
+        # shellcheck source=/dev/null
+        . /etc/SuSe-release
+        osname=Suse
+    elif [[ -f /etc/redhat-release ]]
+    then
+        # shellcheck source=/dev/null
+        . /etc/redhat-release
+        osname=redhat-release
+    elif command -v termux-setup-storage> /dev/null 2>&1
+    then
+        osname="Termux"
+    else
+        osname=$(uname -s)
+    fi
+
+    if [[ "${osname}" =~ "Kali" ]]; then echo "Kali"
+    elif [[ "${osname}" =~ "ALT" ]]; then echo "Alt Linux"
+    elif [[ "${osname}" =~ "Termux" ]]; then echo "Termux"
+    elif [[ "${osname}" =~ "openSUSE" ]]; then echo "openSUSE"
+    elif [[ "${osname}" =~ "Mint" ]]; then echo "Mint"
+    elif [[ "${osname}" =~ "Raspbian" ]]; then echo "Raspbian"
+    elif [[ "${osname}" =~ "Ubuntu" ]]; then echo "Ubuntu"
+    elif [[ "${osname}" =~ "elementary" ]]; then echo "Elementary"
+    else
+        echo "Unsupported Linux"
+    fi
+    return 0
+}
+
+# Print an info message,
+#
+# `$1` - The printed message.
+#
+# ### Examples
+#
+#   print_info "This is an easy message!"
+#
+# ### Returns
+
+# nothing.
+print_info() {
+	local _message="${1}"
+	echo -e "${info_color:-}[INFO] ${_message:-Info}${reset_color:-}"
+}
+
+
+# Printing a failure message.
+#
+# `$1` - The printed message.
+#
+# ### Examples
+#
+#   print_fail "Fail message!"
+#
+# ### Returns
+#
+# nothing.
+print_fail() {
+	local _message="$1"
+	echo -e "${error_color:-}[FAIL] ${_message:-Info}${reset_color:-}" >&2
+    exit 1
+}
+
+# Print an okay message.
+#
+# `$1` - The printed message.
+#
+# ### Examples
+#
+#   print_okay "Okay message!"
+#
+# ### Returns
+#
+# nothing.
+print_okay() {
+    local _message="${1}"
+    echo -e "${success_color:-}[OKAY] ${_message:-OK}${reset_color:-}"
+}
+
+# Print a warning message
+#
+# `$1` - The printed message.
+#
+# ### Examples
+#
+#   print_warn "This is warning!"
+#
+# ### Returns
+
+# nothing.
+print_warn() {
+	local _message="${1}"
+	echo -e "${warning_color:-}[WARN] ${_message:-Warning}${reset_color:-}"
+}
