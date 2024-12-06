@@ -1,5 +1,7 @@
 # git-sync #
 
+Use [git-synchronize](https://github.com/Alimektor/git-synchronize) for a more user-friendly experience.
+
 > A template with magic aliases, hooks, services for Git repository auto-synchronization between different devices.
 
 ## Table of Contents ##
